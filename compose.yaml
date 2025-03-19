@@ -1,0 +1,33 @@
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_APPENDONLY=no   # Disable AOF persistence
+      - REDIS_SAVE=""         # Disable RDB persistence
+    command: redis-server --save "" --appendonly no
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "9090:9090"
+    environment:
+      - REDIS_HOST=redis
+
+volumes:
+  redis-data:
+    driver: local
+    driver_opts:
+      type: tmpfs
+      device: tmpfs

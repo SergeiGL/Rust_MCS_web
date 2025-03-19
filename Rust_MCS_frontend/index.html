@@ -1,0 +1,264 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="./src/output.css" rel="stylesheet">
+
+    <!-- Monaco Editor Resources -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs/loader.js"></script>
+</head>
+
+<body class="bg-gray-400 min-h-screen">
+    <div class="container mx-auto p-6 max-w-3xl">
+        <header class="mb-2">
+            <div class="bg-slate-800 shadow-lg rounded-lg p-6">
+                <h1 class="text-2xl font-bold text-green-400 text-center tracking-wide">
+                    The MCS Algorithm Interface
+                </h1>
+            </div>
+        </header>
+
+        <main>
+            <div class="bg-slate-800 shadow-lg rounded-lg overflow-hidden">
+                <form id="mcs_form" class="p-6 pb-4">
+                    <div>
+                        <div class="mb-4">
+                            <label for="nsweeps-slider" class="block text-xl text-gray-300">nsweeps: <span
+                                    id="nsweeps-sliderValue">150</span></label>
+                            <input id="nsweeps-slider" type="range" min="20" max="1000" value="150"
+                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                                data-display-id="nsweeps-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
+                        </div>
+                        <div class="mb-4">
+                            <label for="freach-slider" class="block text-xl text-gray-300">freach: <span
+                                    id="freach-sliderValue">-∞</span></label>
+                            <input id="freach-slider" type="range" min="-10000" max="10" value="-10000"
+                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                                data-display-id="freach-sliderValue" data-special-value="-10000:-∞" oninput="updateSliderValue(this)">
+                        </div>
+                        <div class="mb-4">
+                            <label for="nf-slider" class="block text-xl text-gray-300">nf: <span id="nf-sliderValue">50000</span></label>
+                            <input id="nf-slider" type="range" min="1000" max="1000000" value="50000"
+                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                                data-display-id="nf-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
+                        </div>
+                        <div class="mb-4">
+                            <label for="smax-slider" class="block text-xl text-gray-300">smax: <span
+                                    id="smax-sliderValue">1000</span></label>
+                            <input id="smax-slider" type="range" min="100" max="5000" value="1000"
+                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                                data-display-id="smax-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
+                        </div>
+                        <div class="mb-4">
+                            <label for="local-slider" class="block text-xl text-gray-300">local: <span
+                                    id="local-sliderValue">50</span></label>
+                            <input id="local-slider" type="range" min="0" max="500" value="50"
+                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                                data-display-id="local-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Rust Code</label>
+                        <div id="code-editor" class="h-96 border border-slate-600 rounded-lg overflow-hidden"></div>
+                    </div>
+                    <button type="submit"
+                        class="w-full py-3 px-4 rounded-lg text-xl font-bold bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-800">
+                        <span id="submit-button-text" class="text-gray-200">Evaluate</span>
+                    </button>
+                </form>
+
+                <div class="border-t border-slate-700 p-3">
+                    <p class="text-sm text-gray-400 text-center">
+                        Developed by
+                        <a href="https://sergeigl.github.io/personal_page/"
+                            target="_blank"
+                            class="text-green-400 hover:text-green-300 transition-colors duration-200 font-medium">
+                            Sergei Glukhov
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function updateSliderValue(slider) {
+            const displayId = slider.getAttribute('data-display-id');
+            const specialValueMapping = slider.getAttribute('data-special-value');
+            const value = slider.value;
+
+            // Check if this value has a special display value
+            if (specialValueMapping && specialValueMapping.includes(':')) {
+                const mappings = specialValueMapping.split(',');
+                for (const mapping of mappings) {
+                    const [originalValue, displayValue] = mapping.split(':');
+                    if (value === originalValue) {
+                        document.getElementById(displayId).textContent = displayValue;
+                        return;
+                    }
+                }
+            }
+
+            // Default behavior - display the actual value
+            document.getElementById(displayId).textContent = value;
+        }
+
+        // Initialize Monaco Editor
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs' } });
+        
+        require(['vs/editor/editor.main'], function () {
+            const editor = monaco.editor.create(document.getElementById('code-editor'), {
+                value: '\
+// Define # dimensions\n\
+const N: usize = 6;\n\n\
+// Define Optimization Bounds:\n\
+let u = SVector::<f64, N>::from_row_slice(&[0.0; N]); // lower bound\n\
+let v = SVector::<f64, N>::from_row_slice(&[1.0; N]); // upper bound\n\n\
+// Define the function to mimimize:\n\
+fn func<const N: usize>(x: &SVector<f64, N>) -> f64{\n\
+    // Example:\n\
+    let mut sum = 0.0;\n\
+    for i in 0..6{\n\
+        sum += (x[i] - 0.12345).powi(2);\n\
+    }\n\
+    sum\n\
+}',
+                language: 'rust',
+                theme: 'vs-dark',
+                automaticLayout: true,
+                minimap: { enabled: false },
+                fontSize: 18,
+                lineNumbers: 'on',
+                roundedSelection: false,
+                scrollBeyondLastLine: false,
+                padding: { top: 20 },
+                margin: 0
+            });
+            
+            // Handle form submission
+            document.getElementById('mcs_form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                if (document.getElementById('submit-button-text').textContent == "Loading..."){
+                    console.log("Please wait for the previous request to complete or refresh the page if something went wrong.");
+                    return
+                }
+
+                let resultDiv = document.getElementById('resultDiv');
+                if (resultDiv) {
+                    resultDiv.remove();
+                }
+                
+                document.getElementById('submit-button-text').textContent = "Loading..."
+                
+                
+                const payload = {
+                    "nsweeps": document.getElementById("nsweeps-slider").value,
+                    "freach": document.getElementById("freach-slider").value,
+                    "nf": document.getElementById("nf-slider").value,
+                    "smax": document.getElementById("smax-slider").value,
+                    "local": document.getElementById("local-slider").value,
+                    "code": editor.getValue()
+                }
+
+                // Send the code to localhost
+                fetch('http://localhost:9090/mcs_form_submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('mcs_form_submit: Network response was not ok; likely the backend server is down');
+                })
+                .then(data => {
+                    console.log('Response:', data);
+                    
+                    // Create or clear the result div
+                    let resultDiv = document.getElementById('resultDiv');
+                    if (!resultDiv) {
+                        resultDiv = document.createElement('div');
+                        resultDiv.id = 'resultDiv';
+                        document.body.appendChild(resultDiv);
+                    } else {
+                        resultDiv.innerHTML = '';
+                    }
+                    
+                    // Style the div
+                    resultDiv.style.padding = '10px';
+                    resultDiv.style.margin = '10px 0';
+                    resultDiv.style.border = '1px solid #ddd';
+                    resultDiv.style.borderRadius = '4px';
+                    resultDiv.style.backgroundColor = '#f9f9f9';
+
+                    // Create elements for each part of the response
+                    const successEl = document.createElement('div');
+                    successEl.innerHTML = `<strong>Success:</strong> ${data.success}`;
+                    resultDiv.appendChild(successEl);
+                    
+                    // Add time information
+                    if (data.time) {
+                        const timeEl = document.createElement('div');
+                        const formattedTime = new Date(data.time.secs_since_epoch * 1000).toLocaleString();
+                        timeEl.innerHTML = `<strong>Time:</strong> ${formattedTime}`;
+                        resultDiv.appendChild(timeEl);
+                    }
+
+                    if (data.compile_output) {
+                        const compileEl = document.createElement('div');
+                        compileEl.innerHTML = `<strong>Compile Output:</strong> ${data.compile_output}`;
+                        resultDiv.appendChild(compileEl);
+                    }
+
+                    if (data.run_output) {
+                        const runEl = document.createElement('div');
+                        runEl.innerHTML = `<strong>Run Output:</strong> <pre>${data.run_output}</pre>`;
+                        resultDiv.appendChild(runEl);
+                    }
+
+                    if (data.error) {
+                        const errorEl = document.createElement('div');
+                        errorEl.innerHTML = `<strong>Error:</strong> <pre>${data.error}</pre>`;
+                        errorEl.style.color = 'red';
+                        resultDiv.appendChild(errorEl);
+                    }
+
+                    document.getElementById('submit-button-text').textContent = "Evaluate"
+                })
+                .catch(error => {
+                    // Create or clear the result div
+                    let resultDiv = document.getElementById('resultDiv');
+                    if (!resultDiv) {
+                        resultDiv = document.createElement('div');
+                        resultDiv.id = 'resultDiv';
+                        document.body.appendChild(resultDiv);
+                    } else {
+                        resultDiv.innerHTML = '';
+                    }
+
+                    // Style the div
+                    resultDiv.style.padding = '10px';
+                    resultDiv.style.margin = '10px 0';
+                    resultDiv.style.border = '1px solid #ddd';
+                    resultDiv.style.borderRadius = '4px';
+                    resultDiv.style.backgroundColor = '#f9f9f9';
+
+                    const errorEl = document.createElement('div');
+                    errorEl.innerHTML = `<strong>Error:</strong> <pre>The backend server does not respond. Likely it is offline.\n${error}</pre>`;
+                    errorEl.style.color = 'red';
+                    resultDiv.appendChild(errorEl);
+
+                    document.getElementById('submit-button-text').textContent = "Evaluate"
+                });
+            });
+        });
+    </script>
+</body>
+
+</html>

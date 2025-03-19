@@ -1,0 +1,14 @@
+[package]
+name = "Rust_MCS_web"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tempfile = "*"
+actix-web = "*"
+actix-cors = "*"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "*", features = ["derive"] }
+redis = { version = "*", features = ["tokio-comp"] }
+serde_json = "*"
+md5 = "*"
