@@ -25,6 +25,17 @@ services:
     environment:
       - REDIS_HOST=redis
 
+  web:
+    image: nginx:alpine
+    depends_on:
+      app:
+        condition: service_started
+    ports:
+      - "3000:80"
+    volumes:
+      - ./Rust_MCS_frontend/index.html:/usr/share/nginx/html/index.html:ro
+      - ./Rust_MCS_frontend/src/output.css:/usr/share/nginx/html/src/output.css:ro
+
 volumes:
   redis-data:
     driver: local
