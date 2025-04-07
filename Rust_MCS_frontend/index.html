@@ -7,10 +7,10 @@
     <meta name="description" content="MCS Algorithm Interface for optimization problems">
     <title>MCS Algorithm Interface</title>
     <link href="./src/output.css" rel="stylesheet">
-    
+
     <!-- Monaco Editor Resources -->
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs/loader.js"></script>
-    
+
     <script src="main.js"></script>
 
     <style>
@@ -26,98 +26,108 @@
             margin-top: -4px;
             margin-bottom: -4px;
         }
+
+        pre {
+            white-space: pre-wrap; /* Ensures the text wraps and respects white spaces */
+            word-wrap: break-word; /* Allows breaking long words to prevent overflow */
+            overflow-wrap: break-word; /* Ensures the text breaks to prevent overflow */
+            overflow-x: auto; /* Adds horizontal scrollbar if necessary */
+            max-width: 100%; /* Ensures the pre element does not exceed its container's width */
+            box-sizing: border-box; /* Includes padding and border in the element's total width and height */
+        }
     </style>
 </head>
 
 <body class="bg-gradient-to-br from-gray-300 to-gray-400 min-h-screen font-sans">
-    <div class="container mx-auto p-4 sm:p-6 max-w-4xl">
-        <header class="mb-4">
-            <div class="bg-slate-800 shadow-xl rounded-lg p-6 backdrop-blur-sm bg-opacity-90">
-                <h1 class="text-2xl md:text-3xl font-bold text-green-400 text-center tracking-wide transition-colors duration-300 hover:text-green-300">
-                    The MCS Algorithm Interface
-                </h1>
-            </div>
-        </header>
+<div class="container mx-auto p-4 sm:p-6 max-w-4xl">
+    <header class="mb-4">
+        <div class="bg-slate-800 shadow-xl rounded-lg p-6 backdrop-blur-sm bg-opacity-90">
+            <h1 class="text-2xl md:text-3xl font-bold text-green-400 text-center tracking-wide transition-colors duration-300 hover:text-green-300">
+                The MCS Algorithm Interface
+            </h1>
+        </div>
+    </header>
 
-        <main>
-            <div class="bg-slate-800 shadow-xl rounded-lg overflow-hidden backdrop-blur-sm bg-opacity-90 transition-all duration-300 hover:shadow-2xl">
-                <form id="mcs_form" class="p-6 pb-4 space-y-6">
-                    <div>
-                        <div class="space-y-2">
-                            <label for="nsweeps-slider" class="flex items-center justify-between text-xl text-gray-300">
-                                <span>nsweeps:</span>
-                                <span id="nsweeps-sliderValue" class="font-mono text-green-400">150</span>
-                            </label>
-                            <input id="nsweeps-slider" type="range" min="20" max="1000" value="150"
-                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
-                                data-display-id="nsweeps-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
-                            <p class="text-sm text-gray-400 mt-1 italic mb-3">maximum number of sweeps</p>
-                        </div>
-                        <div class="space-y-2">
-                            <label for="freach-slider" class="flex items-center justify-between text-xl text-gray-300">
-                                <span>freach:</span>
-                                <span id="freach-sliderValue" class="font-mono text-green-400">-∞</span>
-                            </label>
-                            <input id="freach-slider" type="range" min="-10000" max="10" value="-10000"
-                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
-                                data-display-id="freach-sliderValue" data-special-value="-10000:-∞" oninput="updateSliderValue(this)">
-                            <p class="text-sm text-gray-400 mt-1 italic mb-3">target function value</p>
-                        </div>
-                        <div class="space-y-2">
-                            <label for="nf-slider" class="flex items-center justify-between text-xl text-gray-300">
-                                <span>nf:</span>
-                                <span id="nf-sliderValue" class="font-mono text-green-400">50000</span>
-                            </label>
-                            <input id="nf-slider" type="range" min="1000" max="1000000" value="50000"
-                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
-                                data-display-id="nf-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
-                            <p class="text-sm text-gray-400 mt-1 italic mb-3">maximum number of function evaluations</p>
-                        </div>
-                        <div class="space-y-2">
-                            <label for="smax-slider" class="flex items-center justify-between text-xl text-gray-300">
-                                <span>smax:</span>
-                                <span id="smax-sliderValue" class="font-mono text-green-400">1000</span>
-                            </label>
-                            <input id="smax-slider" type="range" min="100" max="5000" value="1000"
-                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
-                                data-display-id="smax-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
-                            <p class="text-sm text-gray-400 mt-1 italic mb-3">number of levels used</p>
-                        </div>
-                        <div class="space-y-2">
-                            <label for="local-slider" class="flex items-center justify-between text-xl text-gray-300">
-                                <span>local:</span>
-                                <span id="local-sliderValue" class="font-mono text-green-400">50</span>
-                            </label>
-                            <input id="local-slider" type="range" min="0" max="500" value="50"
-                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
-                                data-display-id="local-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
-                            <p class="text-sm text-gray-400 mt-1 italic mb-6">local search level</p>
-                        </div>
+    <main>
+        <div class="bg-slate-800 shadow-xl rounded-lg overflow-hidden backdrop-blur-sm bg-opacity-90 transition-all duration-300 hover:shadow-2xl">
+            <form id="mcs_form" class="p-6 pb-4 space-y-6">
+                <div>
+                    <div class="space-y-2">
+                        <label for="nsweeps-slider" class="flex items-center justify-between text-xl text-gray-300">
+                            <span>nsweeps:</span>
+                            <span id="nsweeps-sliderValue" class="font-mono text-green-400">150</span>
+                        </label>
+                        <input id="nsweeps-slider" type="range" min="20" max="1000" value="150"
+                               class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                               data-display-id="nsweeps-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
+                        <p class="text-sm text-gray-400 mt-1 italic mb-3">maximum number of sweeps</p>
                     </div>
-                    <div class="space-y-3 bt-1 mb-4">
-                        <label class="block text-l font-medium text-gray-400">Rust Code</label>
-                        <div id="code-editor" class="h-96 border-2 border-slate-600 rounded-lg overflow-hidden transition-colors duration-200 focus-within:border-green-500"></div>
+                    <div class="space-y-2">
+                        <label for="freach-slider" class="flex items-center justify-between text-xl text-gray-300">
+                            <span>freach:</span>
+                            <span id="freach-sliderValue" class="font-mono text-green-400">-∞</span>
+                        </label>
+                        <input id="freach-slider" type="range" min="-10000" max="10" value="-10000"
+                               class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                               data-display-id="freach-sliderValue" data-special-value="-10000:-∞" oninput="updateSliderValue(this)">
+                        <p class="text-sm text-gray-400 mt-1 italic mb-3">target function value</p>
                     </div>
-                    <button type="submit"
-                        class="w-full py-3 px-4 rounded-lg text-xl font-bold bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
-                        <span id="submit-button-text" class="text-gray-100">Evaluate</span>
-                    </button>
-                </form>
-
-                <div class="border-t border-slate-700 p-4">
-                    <p class="text-sm text-gray-400 text-center">
-                        Developed by
-                        <a href="https://sergeigl.github.io/personal_page/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="text-green-400 hover:text-green-300 transition-colors duration-200 font-medium hover:underline">
-                            Sergei Glukhov
-                        </a>
-                    </p>
+                    <div class="space-y-2">
+                        <label for="nf-slider" class="flex items-center justify-between text-xl text-gray-300">
+                            <span>nf:</span>
+                            <span id="nf-sliderValue" class="font-mono text-green-400">50000</span>
+                        </label>
+                        <input id="nf-slider" type="range" min="1000" max="1000000" value="50000"
+                               class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                               data-display-id="nf-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
+                        <p class="text-sm text-gray-400 mt-1 italic mb-3">maximum number of function evaluations</p>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="smax-slider" class="flex items-center justify-between text-xl text-gray-300">
+                            <span>smax:</span>
+                            <span id="smax-sliderValue" class="font-mono text-green-400">1000</span>
+                        </label>
+                        <input id="smax-slider" type="range" min="100" max="5000" value="1000"
+                               class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                               data-display-id="smax-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
+                        <p class="text-sm text-gray-400 mt-1 italic mb-3">number of levels used</p>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="local-slider" class="flex items-center justify-between text-xl text-gray-300">
+                            <span>local:</span>
+                            <span id="local-sliderValue" class="font-mono text-green-400">50</span>
+                        </label>
+                        <input id="local-slider" type="range" min="0" max="500" value="50"
+                               class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
+                               data-display-id="local-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
+                        <p class="text-sm text-gray-400 mt-1 italic mb-6">local search level</p>
+                    </div>
                 </div>
+                <div class="space-y-3 bt-1 mb-4">
+                    <label class="block text-l font-medium text-gray-400">Rust Code</label>
+                    <div id="code-editor"
+                         class="h-96 border-2 border-slate-600 rounded-lg overflow-hidden transition-colors duration-200 focus-within:border-green-500"></div>
+                </div>
+                <button type="submit"
+                        class="w-full py-3 px-4 rounded-lg text-xl font-bold bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span id="submit-button-text" class="text-gray-100">Evaluate</span>
+                </button>
+            </form>
+
+            <div class="border-t border-slate-700 p-4">
+                <p class="text-sm text-gray-400 text-center">
+                    Developed by
+                    <a href="https://sergeigl.github.io/personal_page/"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="text-green-400 hover:text-green-300 transition-colors duration-200 font-medium hover:underline">
+                        Sergei Glukhov
+                    </a>
+                </p>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
+</div>
 
 </body>
 

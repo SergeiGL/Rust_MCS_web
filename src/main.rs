@@ -10,14 +10,12 @@ use std::{
 use tempfile::TempDir;
 use tokio::process::Command;
 
-// Type alias for Result to reduce boilerplate
-type AppResult<T> = Result<T, String>;
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct BackendResult {
     success: bool,
     time: SystemTime,
     run_output: Option<String>,
+    params_used: Option<Payload>,
     error: Option<String>,
 }
 
@@ -31,7 +29,7 @@ struct Payload {
     code: String,
 }
 
-const IP: &str = "0.0.0.0:9090";
+const IP: &str = "0.0.0.0:3001";
 // Constants for validation bounds
 const NSWEEPS_MIN: u32 = 20;
 const NSWEEPS_MAX: u32 = 1_000;
@@ -46,7 +44,7 @@ const LOCAL_MAX: u32 = 500;
 const REDIS_CACHE_TTL: u64 = 86400; // 24 hours in seconds
 
 // Helper functions for payload validation
-fn validate_unsigned(value: &str, min: u32, max: u32) -> AppResult<String> {
+fn validate_unsigned(value: &str, min: u32, max: u32) -> Result<String, String> {
     let parsed = value
         .parse::<u32>()
         .map_err(|e| format!("'{value}' is not a valid unsigned integer: {e}"))?;
@@ -60,7 +58,7 @@ fn validate_unsigned(value: &str, min: u32, max: u32) -> AppResult<String> {
     Ok(parsed.to_string())
 }
 
-fn validate_float(value: &str, min: f64, max: f64) -> AppResult<String> {
+fn validate_float(value: &str, min: f64, max: f64) -> Result<String, String> {
     let parsed = value
         .parse::<f64>()
         .map_err(|e| format!("'{value}' is not a valid float: {e}"))?;
@@ -79,7 +77,7 @@ fn validate_float(value: &str, min: f64, max: f64) -> AppResult<String> {
     Ok(format!("{parsed}.0"))
 }
 
-fn validate_input(payload: &Payload) -> AppResult<Payload> {
+fn validate_input(payload: &Payload) -> Result<Payload, String> {
     Ok(Payload {
         nsweeps: validate_unsigned(&payload.nsweeps, NSWEEPS_MIN, NSWEEPS_MAX)?,
         freach: validate_float(&payload.freach, FREACH_MIN, FREACH_MAX)?,
@@ -90,7 +88,7 @@ fn validate_input(payload: &Payload) -> AppResult<Payload> {
     })
 }
 
-async fn execute_code(payload: &Payload) -> AppResult<BackendResult> {
+async fn execute_code(validated_payload: Payload) -> Result<BackendResult, String> {
     // Create a temporary directory for our project
     let temp_dir =
         TempDir::new().map_err(|e| format!("Failed to create temporary directory: {e}"))?;
@@ -141,12 +139,12 @@ fn main() {{
     println!("fbest: {{fbest:?}}");
     println!("flag: {{flag:?}}");
 }}"#,
-        nsweeps = payload.nsweeps,
-        freach = payload.freach,
-        nf = payload.nf,
-        smax = payload.smax,
-        local = payload.local,
-        code = payload.code,
+        nsweeps = validated_payload.nsweeps,
+        freach = validated_payload.freach,
+        nf = validated_payload.nf,
+        smax = validated_payload.smax,
+        local = validated_payload.local,
+        code = validated_payload.code,
     );
 
     // Write files to disk
@@ -170,6 +168,7 @@ fn main() {{
             success: true,
             time: SystemTime::now(),
             run_output: Some(String::from_utf8_lossy(&output.stdout).to_string()),
+            params_used: Some(validated_payload),
             error: None,
         })
     } else {
@@ -220,6 +219,7 @@ async fn submit_handler(
             success: true,
             time: SystemTime::now(),
             run_output: None,
+            params_used: None,
             error: Some(
                 "Too many requests. The system is at peak capacity. Try again later.".to_string(),
             ),
@@ -230,20 +230,20 @@ async fn submit_handler(
 
     // Process the request if not in cache
     let result = match validate_input(&payload) {
-        Ok(valid_payload) => {
-            execute_code(&valid_payload)
-                .await
-                .unwrap_or_else(|error| BackendResult {
-                    success: false,
-                    time: SystemTime::now(),
-                    run_output: None,
-                    error: Some(error),
-                })
-        }
+        Ok(validated_payload) => execute_code(validated_payload)
+            .await
+            .unwrap_or_else(|error| BackendResult {
+                success: false,
+                time: SystemTime::now(),
+                run_output: None,
+                params_used: None,
+                error: Some(error),
+            }),
         Err(error) => BackendResult {
             success: false,
             time: SystemTime::now(),
             run_output: None,
+            params_used: None,
             error: Some(error),
         },
     };

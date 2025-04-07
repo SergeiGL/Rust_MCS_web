@@ -1,12 +1,11 @@
 // Default Rust code for the editor
-const DEFAULT_RUST_CODE = `// Define # dimensions
-const N: usize = 6;
+const DEFAULT_RUST_CODE = `const N: usize = 6; // # dimensions
 
-// Define Optimization Bounds:
+// Optimization Bounds:
 let u = SVector::<f64, N>::from_row_slice(&[0.0; N]); // lower bound
 let v = SVector::<f64, N>::from_row_slice(&[1.0; N]); // upper bound
 
-// Define the function to mimimize:
+// The function to mimimize (do NOT rename the function (keep fn func<const N: usize>(x: &SVector<f64, N>) -> f64{)):
 fn func<const N: usize>(x: &SVector<f64, N>) -> f64{
     // Example:
     let mut sum = 0.0;
@@ -49,13 +48,13 @@ function createResultDiv() {
     } else {
         resultDiv.innerHTML = '';
     }
-    
+
     // Style the div
     resultDiv.style.backgroundColor = '#f9f9f9';
     resultDiv.style.borderRadius = '0.5rem';
     resultDiv.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)';
     resultDiv.style.padding = '1rem';
-    
+
     return resultDiv;
 }
 
@@ -65,7 +64,7 @@ function displayResponseData(data, resultDiv) {
     const successEl = document.createElement('div');
     successEl.innerHTML = `<strong>Success:</strong> ${data.success}`;
     resultDiv.appendChild(successEl);
-    
+
     // Add time information
     if (data.time) {
         const timeEl = document.createElement('div');
@@ -79,11 +78,21 @@ function displayResponseData(data, resultDiv) {
         compileEl.innerHTML = `<strong>Compile Output:</strong> ${data.compile_output}`;
         resultDiv.appendChild(compileEl);
     }
-
     if (data.run_output) {
         const runEl = document.createElement('div');
         runEl.innerHTML = `<strong>Run Output:</strong> <pre>${data.run_output}</pre>`;
         resultDiv.appendChild(runEl);
+    }
+
+
+    if (data.params_used) {
+        console.log(data.params_used);
+        const params_usedEL = document.createElement('div');
+        params_usedEL.innerHTML = `
+            <strong>Parameters used:</strong>
+            <pre>${JSON.stringify(data.params_used, null, 2)}</pre>
+        `;
+        resultDiv.appendChild(params_usedEL);
     }
 
     if (data.error) {
@@ -92,6 +101,7 @@ function displayResponseData(data, resultDiv) {
         errorEl.style.color = 'red';
         resultDiv.appendChild(errorEl);
     }
+
 }
 
 // Display error message in the result div
@@ -105,22 +115,22 @@ function displayErrorMessage(error, resultDiv) {
 // Submit form data to the server
 function submitForm(editor) {
     const submitButton = document.getElementById('submit-button-text');
-    
+
     // Prevent multiple submissions
     if (submitButton.textContent === "Loading...") {
         console.log("Please wait for the previous request to complete or refresh the page if something went wrong.");
         return;
     }
-    
+
     // Remove previous results
     let resultDiv = document.getElementById('resultDiv');
     if (resultDiv) {
         resultDiv.remove();
     }
-    
+
     // Update button state
     submitButton.textContent = "Loading...";
-    
+
     // Prepare payload
     const payload = {
         "nsweeps": document.getElementById("nsweeps-slider").value,
@@ -131,35 +141,35 @@ function submitForm(editor) {
         "code": editor.getValue()
     };
 
-    // Send the code to localhost
-    fetch('http://localhost:9090/mcs_form_submit', {
+    // Send the form to backend
+    fetch('http://localhost:3001/mcs_form_submit', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
     })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        }
-        throw new Error('mcs_form_submit: Network response was not ok; likely the backend server is down');
-    })
-    .then(data => {
-        console.log('Response:', data);
-        const resultDiv = createResultDiv();
-        displayResponseData(data, resultDiv);
-        submitButton.textContent = "Evaluate";
-    })
-    .catch(error => {
-        const resultDiv = createResultDiv();
-        displayErrorMessage(error, resultDiv);
-        submitButton.textContent = "Evaluate";
-    });
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+            throw new Error('mcs_form_submit: Network response was not ok; likely the backend server is down');
+        })
+        .then(data => {
+            console.log('Response:', data);
+            const resultDiv = createResultDiv();
+            displayResponseData(data, resultDiv);
+            submitButton.textContent = "Evaluate";
+        })
+        .catch(error => {
+            const resultDiv = createResultDiv();
+            displayErrorMessage(error, resultDiv);
+            submitButton.textContent = "Evaluate";
+        });
 }
 
 // Initialize Monaco Editor
-require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs' } });
+require.config({paths: {'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@latest/min/vs'}});
 
 require(['vs/editor/editor.main'], function () {
     // Create Monaco editor instance
@@ -168,15 +178,15 @@ require(['vs/editor/editor.main'], function () {
         language: 'rust',
         theme: 'vs-dark',
         automaticLayout: true,
-        minimap: { enabled: false },
+        minimap: {enabled: false},
         fontSize: 18,
         lineNumbers: 'on',
         roundedSelection: false,
         scrollBeyondLastLine: false,
-        padding: { top: 20 },
+        padding: {top: 20},
         margin: 0
     });
-    
+
     // Handle form submission
     document.getElementById('mcs_form').addEventListener('submit', (e) => {
         e.preventDefault();

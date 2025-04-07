@@ -44,7 +44,7 @@ USER appuser
 COPY --from=builder /app/target/release/Rust_MCS_web .
 
 # Expose the port the application listens on
-EXPOSE 9090
+EXPOSE 3001
 
 # Run the binary directly
 CMD ["./Rust_MCS_web"]
