@@ -114,10 +114,10 @@ fn main() {{
     let hess = SMatrix::<f64, N, N>::repeat(1.);     // sparsity pattern of Hessian
 
 
-    let (xbest, fbest, _, _, _, _, ExitFlag) = mcs::<SMAX, N>(func, &u, &v, nsweeps, nf, local, gamma, &hess).unwrap();
+    let (xbest, fbest, _, _, _, _, exitflag) = mcs::<SMAX, N>(func, &u, &v, nsweeps, nf, local, gamma, &hess).unwrap();
     println!("xbest: {{xbest}}");
     println!("fbest: {{fbest:?}}");
-    println!("flag: {{ExitFlag:?}}");
+    println!("flag: {{exitflag:?}}");
 }}"#,
         nsweeps = validated_payload.nsweeps,
         nf = validated_payload.nf,
