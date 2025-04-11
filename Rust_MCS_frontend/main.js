@@ -142,15 +142,16 @@ function submitForm(editor) {
     };
 
     // Send the form to backend
-    fetch('http://localhost:3001/mcs_form_submit', {
+    fetch('http://localhost:4004/mcs_form_submit', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
-            'Expires': '0'
+            'Accept': 'application/json',
+            'Expires': '0',
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
     })
         .then(response => {
             if (response.ok) {

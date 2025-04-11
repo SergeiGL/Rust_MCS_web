@@ -22,7 +22,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "3001:3001"
+      - "4004:4004"
     environment:
       - REDIS_HOST=redis
     networks:

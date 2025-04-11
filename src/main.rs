@@ -34,7 +34,7 @@ struct AppState {
     request_in_progress: AtomicBool,
 }
 
-const IP: &str = "0.0.0.0:3001";
+const IP: &str = "0.0.0.0:4004";
 
 // Constants for validation bounds
 const NSWEEPS_MIN: u32 = 20;
@@ -179,7 +179,9 @@ async fn submit_handler(
 
     // Try to get cached response first
     if let Ok(Some(cached)) = redis_conn.get::<_, Option<String>>(&cache_key).await {
-        return HttpResponse::Ok().body(cached);
+        return HttpResponse::Ok()
+            .content_type("application/json")
+            .body(cached);
     }
 
     // Check if other request is in progress
@@ -190,15 +192,18 @@ async fn submit_handler(
         .compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst)
         .is_err()
     {
-        return HttpResponse::Ok().json(BackendResult {
-            success: true,
-            time: SystemTime::now(),
-            run_output: None,
-            params_used: None,
-            error: Some(
-                "Too many requests. The system is at peak capacity. Try again later.".to_string(),
-            ),
-        });
+        return HttpResponse::Ok()
+            .content_type("application/json")
+            .json(BackendResult {
+                success: true,
+                time: SystemTime::now(),
+                run_output: None,
+                params_used: None,
+                error: Some(
+                    "Too many requests. The system is at peak capacity. Try again later."
+                        .to_string(),
+                ),
+            });
     }
 
     // Process the request if not in cache
@@ -226,7 +231,9 @@ async fn submit_handler(
         Ok(json) => json,
         Err(_) => {
             app_state.request_in_progress.store(false, Ordering::SeqCst);
-            return HttpResponse::InternalServerError().finish();
+            return HttpResponse::InternalServerError()
+                .content_type("application/json")
+                .finish();
         }
     };
 
@@ -237,7 +244,9 @@ async fn submit_handler(
 
     app_state.request_in_progress.store(false, Ordering::SeqCst);
 
-    HttpResponse::Ok().body(result_json)
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(result_json)
 }
 
 async fn get_redis_connection() -> redis::RedisResult<redis::aio::MultiplexedConnection> {
@@ -261,11 +270,12 @@ async fn main() -> std::io::Result<()> {
         redis_con: get_redis_connection().await.unwrap(),
         request_in_progress: AtomicBool::new(false),
     });
-
     println!("Starting server at {IP}");
     HttpServer::new(move || {
+        let cors = Cors::permissive();
+
         App::new()
-            .wrap(Cors::permissive())
+            .wrap(cors)
             .app_data(app_state.clone())
             .route("/mcs_form_submit", web::post().to(submit_handler))
     })
