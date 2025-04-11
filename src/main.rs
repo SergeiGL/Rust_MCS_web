@@ -22,7 +22,6 @@ struct BackendResult {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Payload {
     nsweeps: String,
-    freach: String,
     nf: String,
     smax: String,
     local: String,
@@ -30,57 +29,35 @@ struct Payload {
 }
 
 const IP: &str = "0.0.0.0:3001";
+
 // Constants for validation bounds
 const NSWEEPS_MIN: u32 = 20;
-const NSWEEPS_MAX: u32 = 1_000;
-const FREACH_MIN: f64 = -10_000.0;
-const FREACH_MAX: f64 = 10.0;
-const NF_MIN: u32 = 1_000;
-const NF_MAX: u32 = 1_000_000;
+const NSWEEPS_MAX: u32 = 3_000;
+const NF_MIN: u32 = 10_000;
+const NF_MAX: u32 = 2_000_000;
 const SMAX_MIN: u32 = 100;
 const SMAX_MAX: u32 = 5_000;
 const LOCAL_MIN: u32 = 0;
 const LOCAL_MAX: u32 = 500;
 const REDIS_CACHE_TTL: u64 = 86400; // 24 hours in seconds
 
-// Helper functions for payload validation
-fn validate_unsigned(value: &str, min: u32, max: u32) -> Result<String, String> {
-    let parsed = value
-        .parse::<u32>()
-        .map_err(|e| format!("'{value}' is not a valid unsigned integer: {e}"))?;
-
-    if parsed < min || parsed > max {
-        return Err(format!(
-            "Value {parsed} is out of acceptable range {min}:{max}"
-        ));
-    }
-
-    Ok(parsed.to_string())
-}
-
-fn validate_float(value: &str, min: f64, max: f64) -> Result<String, String> {
-    let parsed = value
-        .parse::<f64>()
-        .map_err(|e| format!("'{value}' is not a valid float: {e}"))?;
-
-    if parsed == FREACH_MIN {
-        // println!("neg infinity");
-        return Ok("f64::NEG_INFINITY".to_string());
-    }
-
-    if parsed <= min || parsed > max {
-        return Err(format!(
-            "Value {parsed} is out of acceptable range {min}:{max}"
-        ));
-    }
-
-    Ok(format!("{parsed}.0"))
-}
-
 fn validate_input(payload: &Payload) -> Result<Payload, String> {
+    fn validate_unsigned(value: &str, min: u32, max: u32) -> Result<String, String> {
+        let parsed = value
+            .parse::<u32>()
+            .map_err(|e| format!("'{value}' is not a valid unsigned integer: {e}"))?;
+
+        if parsed < min || parsed > max {
+            return Err(format!(
+                "Value {parsed} is out of acceptable range {min}:{max}"
+            ));
+        }
+
+        Ok(parsed.to_string())
+    }
+
     Ok(Payload {
         nsweeps: validate_unsigned(&payload.nsweeps, NSWEEPS_MIN, NSWEEPS_MAX)?,
-        freach: validate_float(&payload.freach, FREACH_MIN, FREACH_MAX)?,
         nf: validate_unsigned(&payload.nf, NF_MIN, NF_MAX)?,
         smax: validate_unsigned(&payload.smax, SMAX_MIN, SMAX_MAX)?,
         local: validate_unsigned(&payload.local, LOCAL_MIN, LOCAL_MAX)?,
@@ -118,29 +95,22 @@ use nalgebra::{{SVector, SMatrix}};
 use Rust_MCS::{{mcs, StopStruct, IinitEnum}};
 
 fn main() {{
-    // Configure stopping criteria
-    let stop = StopStruct {{
-        nsweeps: {nsweeps},  // maximum number of sweeps
-        freach: {freach},    // target function value
-        nf: {nf},            // maximum number of function evaluations
-    }};
+    let nsweeps = {nsweeps};    // maximum number of sweeps
+    let nf = {nf};              // maximum number of function evaluations
 
-    // Additional parameters
-    const SMAX: usize = {smax};   // number of levels used
-    let local = {local};          // local search level
+    const SMAX: usize = {smax};                      // number of levels used
+    let local = {local};                             // local search level
+    let gamma = 2e-14;                               // acceptable relative accuracy for local search
+    let hess = SMatrix::<f64, 6, 6>::repeat(1.);     // sparsity pattern of Hessian
 
     {code}
 
-    // Run the optimization
-    let (xbest, fbest, _, _, _, _, flag) = mcs::<SMAX, N>(
-        func, &u, &v, &stop, &IinitEnum::Zero, local, 2e-7, &SMatrix::<f64, 6, 6>::repeat(1.)
-    );
+    let (xbest, fbest, xmin, fmi, ncall, ncloc, ExitFlag) = mcs::<SMAX, 6>(hm6, &u, &v, nsweeps, nf, local, gamma, &hess).unwrap();
     println!("xbest: {{xbest}}");
     println!("fbest: {{fbest:?}}");
-    println!("flag: {{flag:?}}");
+    println!("flag: {{ExitFlag:?}}");
 }}"#,
         nsweeps = validated_payload.nsweeps,
-        freach = validated_payload.freach,
         nf = validated_payload.nf,
         smax = validated_payload.smax,
         local = validated_payload.local,
@@ -173,7 +143,7 @@ fn main() {{
         })
     } else {
         Err(format!(
-            "Cargo execution error: {}",
+            "Cargo execution error:\n{}",
             String::from_utf8_lossy(&output.stderr)
         ))
     }
@@ -292,19 +262,8 @@ async fn main() -> std::io::Result<()> {
     // Start HTTP server
     println!("Starting server at {IP}");
     HttpServer::new(move || {
-        // Configure CORS
-        let cors = Cors::default()
-            .allowed_origin("http://localhost:3000")
-            .allowed_origin("http://127.0.0.1:3000")
-            .allowed_methods(vec!["POST"])
-            .allowed_headers(vec![
-                actix_web::http::header::CONTENT_TYPE,
-                actix_web::http::header::ACCEPT,
-            ])
-            .max_age(3600);
-
         App::new()
-            .wrap(cors)
+            .wrap(Cors::permissive())
             .app_data(app_state.clone())
             .route("/mcs_form_submit", web::post().to(submit_handler))
     })

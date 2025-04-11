@@ -1,11 +1,12 @@
 // Default Rust code for the editor
-const DEFAULT_RUST_CODE = `const N: usize = 6; // # dimensions
+const DEFAULT_RUST_CODE = `// Do NOT rename variables and function!
+const N: usize = 6; // # dimensions
 
 // Optimization Bounds:
 let u = SVector::<f64, N>::from_row_slice(&[0.0; N]); // lower bound
 let v = SVector::<f64, N>::from_row_slice(&[1.0; N]); // upper bound
 
-// The function to mimimize (do NOT rename the function (keep fn func<const N: usize>(x: &SVector<f64, N>) -> f64{)):
+// The function to mimimize:
 fn func<const N: usize>(x: &SVector<f64, N>) -> f64{
     // Example:
     let mut sum = 0.0;
@@ -134,7 +135,6 @@ function submitForm(editor) {
     // Prepare payload
     const payload = {
         "nsweeps": document.getElementById("nsweeps-slider").value,
-        "freach": document.getElementById("freach-slider").value,
         "nf": document.getElementById("nf-slider").value,
         "smax": document.getElementById("smax-slider").value,
         "local": document.getElementById("local-slider").value,
@@ -145,7 +145,10 @@ function submitForm(editor) {
     fetch('http://localhost:3001/mcs_form_submit', {
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
         },
         body: JSON.stringify(payload)
     })
@@ -180,10 +183,10 @@ require(['vs/editor/editor.main'], function () {
         automaticLayout: true,
         minimap: {enabled: false},
         fontSize: 18,
-        lineNumbers: 'on',
+        lineNumbers: 'off',
         roundedSelection: false,
         scrollBeyondLastLine: false,
-        padding: {top: 20},
+        padding: {top: 15},
         margin: 0
     });
 

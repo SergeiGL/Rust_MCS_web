@@ -17,8 +17,8 @@
         input[type='range']::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            height: 15px;
-            width: 15px;
+            height: 18px;
+            width: 18px;
             background-color: #16a34a; /* green-600 */
             border-radius: 50%;
             border: none;
@@ -57,27 +57,17 @@
                             <span>nsweeps:</span>
                             <span id="nsweeps-sliderValue" class="font-mono text-green-400">150</span>
                         </label>
-                        <input id="nsweeps-slider" type="range" min="20" max="1000" value="150"
+                        <input id="nsweeps-slider" type="range" min="20" max="3000" value="150"
                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
                                data-display-id="nsweeps-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
                         <p class="text-sm text-gray-400 mt-1 italic mb-3">maximum number of sweeps</p>
-                    </div>
-                    <div class="space-y-2">
-                        <label for="freach-slider" class="flex items-center justify-between text-xl text-gray-300">
-                            <span>freach:</span>
-                            <span id="freach-sliderValue" class="font-mono text-green-400">-∞</span>
-                        </label>
-                        <input id="freach-slider" type="range" min="-10000" max="10" value="-10000"
-                               class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
-                               data-display-id="freach-sliderValue" data-special-value="-10000:-∞" oninput="updateSliderValue(this)">
-                        <p class="text-sm text-gray-400 mt-1 italic mb-3">target function value</p>
                     </div>
                     <div class="space-y-2">
                         <label for="nf-slider" class="flex items-center justify-between text-xl text-gray-300">
                             <span>nf:</span>
                             <span id="nf-sliderValue" class="font-mono text-green-400">50000</span>
                         </label>
-                        <input id="nf-slider" type="range" min="1000" max="1000000" value="50000"
+                        <input id="nf-slider" type="range" min="10000" max="2000000" value="50000"
                                class="w-full mt-2 appearance-none bg-gray-300 h-2 rounded-lg cursor-pointer"
                                data-display-id="nf-sliderValue" data-special-value="" oninput="updateSliderValue(this)">
                         <p class="text-sm text-gray-400 mt-1 italic mb-3">maximum number of function evaluations</p>
@@ -106,7 +96,9 @@
                 <div class="space-y-3 bt-1 mb-4">
                     <label class="block text-l font-medium text-gray-400">Rust Code</label>
                     <div id="code-editor"
-                         class="h-96 border-2 border-slate-600 rounded-lg overflow-hidden transition-colors duration-200 focus-within:border-green-500"></div>
+                         style="height: 30rem;"
+                         class="border-2 border-slate-600 rounded-lg overflow-hidden transition-colors duration-200 focus-within:border-green-500">
+                    </div>
                 </div>
                 <button type="submit"
                         class="w-full py-3 px-4 rounded-lg text-xl font-bold bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
