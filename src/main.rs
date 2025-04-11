@@ -3,11 +3,11 @@ use actix_web::{App, HttpResponse, HttpServer, Responder, web};
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
 use std::{
-    fs,
     sync::atomic::{AtomicBool, Ordering},
     time::SystemTime,
 };
 use tempfile::TempDir;
+use tokio::fs;
 use tokio::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -28,6 +28,12 @@ struct Payload {
     code: String,
 }
 
+// AppState to store shared state
+struct AppState {
+    redis_con: redis::aio::MultiplexedConnection,
+    request_in_progress: AtomicBool,
+}
+
 const IP: &str = "0.0.0.0:3001";
 
 // Constants for validation bounds
@@ -41,21 +47,21 @@ const LOCAL_MIN: u32 = 0;
 const LOCAL_MAX: u32 = 500;
 const REDIS_CACHE_TTL: u64 = 86400; // 24 hours in seconds
 
-fn validate_input(payload: &Payload) -> Result<Payload, String> {
-    fn validate_unsigned(value: &str, min: u32, max: u32) -> Result<String, String> {
-        let parsed = value
-            .parse::<u32>()
-            .map_err(|e| format!("'{value}' is not a valid unsigned integer: {e}"))?;
+fn validate_unsigned(value: &str, min: u32, max: u32) -> Result<String, String> {
+    let parsed = value
+        .parse::<u32>()
+        .map_err(|e| format!("'{value}' is not a valid unsigned integer: {e}"))?;
 
-        if parsed < min || parsed > max {
-            return Err(format!(
-                "Value {parsed} is out of acceptable range {min}:{max}"
-            ));
-        }
-
-        Ok(parsed.to_string())
+    if parsed < min || parsed > max {
+        return Err(format!(
+            "Value {parsed} is out of acceptable range {min}:{max}"
+        ));
     }
 
+    Ok(parsed.to_string())
+}
+
+fn validate_input(payload: &Payload) -> Result<Payload, String> {
     Ok(Payload {
         nsweeps: validate_unsigned(&payload.nsweeps, NSWEEPS_MIN, NSWEEPS_MAX)?,
         nf: validate_unsigned(&payload.nf, NF_MIN, NF_MAX)?,
@@ -74,7 +80,9 @@ async fn execute_code(validated_payload: Payload) -> Result<BackendResult, Strin
     let src_dir = temp_path.join("src");
 
     // Create src directory
-    fs::create_dir(&src_dir).map_err(|e| format!("Failed to create src directory: {e}"))?;
+    fs::create_dir(&src_dir)
+        .await
+        .map_err(|e| format!("Failed to create src directory: {e}"))?;
 
     // Create Cargo.toml with project dependencies
     let cargo_toml = r#"
@@ -88,11 +96,10 @@ nalgebra = "0.33.2"
 Rust_MCS = { git = "https://github.com/SergeiGL/Rust_MCS" }
 "#;
 
-    // Create the main.rs file with the user's code
     let main_rs = format!(
         r#"
 use nalgebra::{{SVector, SMatrix}};
-use Rust_MCS::{{mcs, StopStruct, IinitEnum}};
+use Rust_MCS::*;
 
 fn main() {{
     let nsweeps = {nsweeps};    // maximum number of sweeps
@@ -101,11 +108,13 @@ fn main() {{
     const SMAX: usize = {smax};                      // number of levels used
     let local = {local};                             // local search level
     let gamma = 2e-14;                               // acceptable relative accuracy for local search
-    let hess = SMatrix::<f64, 6, 6>::repeat(1.);     // sparsity pattern of Hessian
 
     {code}
 
-    let (xbest, fbest, xmin, fmi, ncall, ncloc, ExitFlag) = mcs::<SMAX, 6>(hm6, &u, &v, nsweeps, nf, local, gamma, &hess).unwrap();
+    let hess = SMatrix::<f64, N, N>::repeat(1.);     // sparsity pattern of Hessian
+
+
+    let (xbest, fbest, _, _, _, _, ExitFlag) = mcs::<SMAX, N>(func, &u, &v, nsweeps, nf, local, gamma, &hess).unwrap();
     println!("xbest: {{xbest}}");
     println!("fbest: {{fbest:?}}");
     println!("flag: {{ExitFlag:?}}");
@@ -119,9 +128,11 @@ fn main() {{
 
     // Write files to disk
     fs::write(temp_path.join("Cargo.toml"), cargo_toml)
+        .await
         .map_err(|e| format!("Failed to write Cargo.toml: {e}"))?;
 
     fs::write(src_dir.join("main.rs"), main_rs)
+        .await
         .map_err(|e| format!("Failed to write main.rs: {e}"))?;
 
     // Run cargo with tokio for async execution
@@ -159,12 +170,6 @@ fn generate_cache_key(payload: &Payload) -> String {
         .collect::<String>()
 }
 
-// AppState to store shared state
-struct AppState {
-    redis_con: redis::aio::MultiplexedConnection,
-    request_in_progress: AtomicBool,
-}
-
 async fn submit_handler(
     payload: web::Json<Payload>,
     app_state: web::Data<AppState>,
@@ -195,8 +200,6 @@ async fn submit_handler(
             ),
         });
     }
-
-    // println!("{}", app_state.request_in_progress.load(Ordering::SeqCst));
 
     // Process the request if not in cache
     let result = match validate_input(&payload) {
@@ -259,7 +262,6 @@ async fn main() -> std::io::Result<()> {
         request_in_progress: AtomicBool::new(false),
     });
 
-    // Start HTTP server
     println!("Starting server at {IP}");
     HttpServer::new(move || {
         App::new()

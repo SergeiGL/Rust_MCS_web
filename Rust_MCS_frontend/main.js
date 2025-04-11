@@ -159,7 +159,6 @@ function submitForm(editor) {
             throw new Error('mcs_form_submit: Network response was not ok; likely the backend server is down');
         })
         .then(data => {
-            console.log('Response:', data);
             const resultDiv = createResultDiv();
             displayResponseData(data, resultDiv);
             submitButton.textContent = "Evaluate";

@@ -1,7 +1,7 @@
 #############################
 # Stage 1: Builder
 #############################
-FROM rust:1.85-slim-bookworm AS builder
+FROM rust:1.86-slim-bookworm AS builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -27,7 +27,7 @@ RUN cargo build --release
 #############################
 # Stage 2: Runtime
 #############################
-FROM rust:1.85-slim-bookworm
+FROM rust:1.86-slim-bookworm
 
 # Install runtime dependency (if needed)
 RUN apt-get update && apt-get install -y \
@@ -35,10 +35,6 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user and switch to it for improved security
-RUN adduser --disabled-password --gecos "" appuser
-WORKDIR /app
-USER appuser
 
 # Copy the built binary from the builder stage
 COPY --from=builder /app/target/release/Rust_MCS_web .
