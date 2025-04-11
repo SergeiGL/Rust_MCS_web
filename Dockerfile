@@ -20,6 +20,9 @@ RUN rm -rf src
 # Copy the full source code and rebuild the actual binary
 COPY . .
 
+# Build actual code
+RUN cargo build --release
+
 # Expose the port the application listens on
 EXPOSE 4004
 
