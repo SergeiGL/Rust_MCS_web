@@ -1,7 +1,6 @@
 # Rust MCS Web Interface
 
-A modern web interface for the [Rust MCS global minimization algorithm](https://github.com/SergeiGL/Rust_MCS) - a tool for solving complex global
-optimization problems.
+Web interface for the [Rust MCS](https://github.com/SergeiGL/Rust_MCS) global minimization algorithm.
 
 ![MCS Web Interface Screenshot](img.png "The Rust MCS Web Interface")
 
@@ -11,7 +10,6 @@ optimization problems.
 
 - [Git](https://git-scm.com/downloads)
 - [Docker](https://www.docker.com/products/docker-desktop/)
-- [Docker Compose](https://docs.docker.com/compose/install/) (usually included with Docker Desktop)
 
 ### Installation and Launch
 
@@ -21,11 +19,13 @@ optimization problems.
    cd Rust_MCS_web
    ```
 
-2. Start the application with Docker Compose:
+2. Start the application:
+   ```bash
+   docker compose build --no-cache
+   ```
    ```bash
    docker compose up
    ```
-
 3. Access the interface in your browser:
    ```
    http://localhost:3000
@@ -33,5 +33,5 @@ optimization problems.
 
 ## Acknowledgments
 
-- Based on the [Rust MCS implementation](https://github.com/SergeiGL/Rust_MCS)
+- Based on the [Rust MCS](https://github.com/SergeiGL/Rust_MCS) crate
 - Original MCS algorithm by Huyer and Neumaier
