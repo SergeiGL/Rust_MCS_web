@@ -250,26 +250,26 @@ async fn submit_handler(
 }
 
 async fn get_redis_connection() -> redis::RedisResult<redis::aio::MultiplexedConnection> {
-    println!("Redis connection: Starting!");
+    println!("Redis: Starting!");
 
-    // Get the Redis host from the environment variable or default to "127.0.0.1" for local development
-    let redis_host = std::env::var("REDIS_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
+    let redis_host = std::env::var("REDIS_HOST").unwrap_or_else(|_| "127.0.0.1:6379".to_string());
 
-    // Initialize Redis connection
     let redis_client = redis::Client::open(format!("redis://{}/", redis_host))?;
     let redis_con = redis_client.get_multiplexed_async_connection().await?;
 
-    println!("Redis connection: Success!");
-
+    println!("Redis: Success!");
     Ok(redis_con)
 }
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("First line of Rust code...");
+
     let app_state = web::Data::new(AppState {
         redis_con: get_redis_connection().await.unwrap(),
         request_in_progress: AtomicBool::new(false),
     });
+
     println!("Starting server at {IP}");
     HttpServer::new(move || {
         let cors = Cors::permissive();

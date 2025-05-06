@@ -1,6 +1,10 @@
 /target
 /Rust_MCS_frontend
 .idea
+.dockerignore
+.gitignore
+Cargo.lock
+compose.yaml
+Dockerfile
 img.png
 README.md
-.gitignore

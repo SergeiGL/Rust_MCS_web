@@ -1,19 +1,12 @@
 services:
   redis:
     image: redis:latest
-    environment:
-      - REDIS_APPENDONLY=no   # Disable AOF persistence
-      - REDIS_SAVE=""         # Disable RDB persistence
     command: redis-server --save "" --appendonly no
-    volumes:
-      - redis-data:/data
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - app-network
 
 
   backend:
@@ -23,11 +16,6 @@ services:
         condition: service_healthy
     ports:
       - "4004:4004"
-    environment:
-      - REDIS_HOST=redis
-    networks:
-      - app-network
-
 
   frontend:
     image: nginx:alpine
@@ -40,14 +28,3 @@ services:
       - ./Rust_MCS_frontend/index.html:/usr/share/nginx/html/index.html:ro
       - ./Rust_MCS_frontend/src/output.css:/usr/share/nginx/html/src/output.css:ro
       - ./Rust_MCS_frontend/main.js:/usr/share/nginx/html/main.js:ro
-
-volumes:
-  redis-data:
-    driver: local
-    driver_opts:
-      type: tmpfs
-      device: tmpfs
-
-networks:
-  app-network:
-    driver: bridge
