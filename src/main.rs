@@ -105,7 +105,7 @@ fn main() {{
     let nsweeps = {nsweeps};    // maximum number of sweeps
     let nf = {nf};              // maximum number of function evaluations
 
-    const SMAX: usize = {smax};                      // number of levels used
+    let smax = {smax};                      // number of levels used
     let local = {local};                             // local search level
     let gamma = 2e-14;                               // acceptable relative accuracy for local search
 
@@ -113,8 +113,7 @@ fn main() {{
 
     let hess = SMatrix::<f64, N, N>::repeat(1.);     // sparsity pattern of Hessian
 
-
-    let (xbest, fbest, _, _, _, _, exitflag) = mcs::<SMAX, N>(func, &u, &v, nsweeps, nf, local, gamma, &hess).unwrap();
+    let (xbest, fbest, _, _, _, _, exitflag) = mcs::<N>(func, &u, &v, nsweeps, nf, local, gamma, smax, &hess).unwrap();
     println!("xbest: {{xbest}}");
     println!("fbest: {{fbest:?}}");
     println!("flag: {{exitflag:?}}");
